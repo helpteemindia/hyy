@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chatBot">
+        <header>
+            <h2>ChatBot</h2>
+            <span alt="Close" id="cross" onclick="cancel()">X</span>
+        </header>
+
+        <ul class="chatbox">
+            <li class="chat-incoming chat">
+                <p>Hey! How can I assist you today?</p>
+            </li>
+        </ul>
+
+        <div class="chat-input">
+            <textarea placeholder="Enter a message..."></textarea>
+            <button id="sendBTN">Send</button>
+        </div>
+    </div>
+
+    <script>
+    // ✅ ChatBot JS (Fixed Depseek Version)
+
+    const chatInput = document.querySelector('.chat-input textarea');
+    const sendChatBtn = document.querySelector('.chat-input button');
+    const chatbox = document.querySelector(".chatbox");
+    
+    let userMessage = "";
+    const API_KEY = "sk-d00e9ff1152f4148891dd1bb1eeb01f8"; // 🔑 Tumhari Depseek API key
+   const API_URL = "https://api.deepseek.com/v1/chat/completions"; // ✅ Correct endpoint
+
+    // Chat message element create karne ka function
+    const createChatLi = (message, className) => {
+        const chatLi = document.createElement("li");
+        chatLi.classList.add("chat", className);
+        chatLi.innerHTML = `<p>${message}</p>`;
+        return chatLi;
+    };
+
+    // AI response generate karne ka function
+    const generateResponse = async (incomingChatLi) => {
+        const messageElement = incomingChatLi.querySelector("p");
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "depseek-chat",
+                    messages: [{ role: "user", content: userMessage }]
+                })
+            });
+
+            if (!response.ok) throw new Error("Network response was not ok");
+            const data = await response.json();
+
+            // ✅ Depseek format handle
+            if (data.choices && data.choices[0]?.message?.content) {
+                messageElement.textContent = data.choices[0].message.content.trim();
+            } else {
+                messageElement.textContent = "Sorry, no response from AI.";
+            }
+        } catch (error) {
+            messageElement.classList.add("error");
+            messageElement.textContent = "⚠️ Error: Unable to get response.";
+            console.error("Error:", error);
+        } finally {
+            chatbox.scrollTo({ top: chatbox.scrollHeight, behavior: "smooth" });
+        }
+    };
+
+    // User message handle karne ka function
+    const handleChat = () => {
+        userMessage = chatInput.value.trim();
+        if (!userMessage) return;
+
+        chatbox.appendChild(createChatLi(userMessage, "chat-outgoing"));
+        chatInput.value = "";
+        chatbox.scrollTo({ top: chatbox.scrollHeight, behavior: "smooth" });
+
+        setTimeout(() => {
+            const incomingChatLi = createChatLi("Thinking...", "chat-incoming");
+            chatbox.appendChild(incomingChatLi);
+            chatbox.scrollTo({ top: chatbox.scrollHeight, behavior: "smooth" });
+            generateResponse(incomingChatLi);
+        }, 600);
+    };
+
+    sendChatBtn.addEventListener("click", handleChat);
+
+    // Chatbot close function
+    function cancel() {
+        let chatbotcomplete = document.querySelector(".chatBot");
+        if (chatbotcomplete.style.display !== 'none') {
+            chatbotcomplete.style.display = "none";
+            let lastMsg = document.createElement("p");
+            lastMsg.textContent = 'Thanks for using our Chatbot!';
+            lastMsg.classList.add('lastMessage');
+            document.body.appendChild(lastMsg);
+        }
+    }
+    </script>
+</body>
+</html>
